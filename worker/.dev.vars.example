@@ -1,3 +1,17 @@
+# مقادیر نمونه برای اجرای محلی: این فایل را به .dev.vars کپی کنید
+# cp .dev.vars.example .dev.vars
+
+# توکن ربات از BotFather (هرگز کامیت نکنید)
 BOT_TOKEN=123456:AAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+# همان مقداری که به setWebhook می‌دهیم؛ در /setup استفاده می‌شود
 WEBHOOK_SECRET=dev-secret
+
+# رمز مسیر /setup?token=…
 SETUP_TOKEN=dev-setup
+
+# فقط برای اجرای محلی/مرورگر: پذیرش هدر x-dev-user
+DEV_AUTH=1
+
+# آدرس عمومی مینی‌اپ (در محیط اصلی از wrangler.jsonc خوانده می‌شود)
+APP_URL=http://localhost:8787

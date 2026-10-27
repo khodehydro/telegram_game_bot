@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#120a26" />
+    <title>کلمه‌بازی</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  </head>
+  <body>
+    <div id="app" aria-live="polite">
+      <!-- ===================== صفحهٔ لودینگ ===================== -->
+      <section class="screen screen--active" id="screen-loading">
+        <div class="loader">
+          <div class="loader__logo">ک</div>
+          <div class="loader__text">کلمه‌بازی</div>
+          <div class="loader__dots"><span></span><span></span><span></span></div>
+        </div>
+      </section>
+
+      <!-- ===================== خانه ===================== -->
+      <section class="screen" id="screen-home">
+        <header class="topbar">
+          <div class="brand">
+            <span class="brand__mark">ک</span>
+            <span class="brand__name">کلمه‌بازی</span>
+          </div>
+          <div class="pills">
+            <span class="pill" id="home-coins"><span class="pill__icon">🪙</span><b>0</b></span>
+            <span class="pill pill--fire" id="home-streak"><span class="pill__icon">🔥</span><b>0</b></span>
+          </div>
+        </header>
+
+        <div class="hero card">
+          <div class="hero__ring">
+            <svg viewBox="0 0 120 120" class="ring">
+              <circle class="ring__bg" cx="60" cy="60" r="52" />
+              <circle class="ring__fg" cx="60" cy="60" r="52" id="home-ring" />
+            </svg>
+            <div class="hero__ring-label">
+              <b id="home-level">۱</b>
+              <span>مرحله</span>
+            </div>
+          </div>
+          <div class="hero__body">
+            <p class="hero__eyebrow">ادامهٔ بازی</p>
+            <h1 class="hero__title" id="home-title">مرحلهٔ ۱</h1>
+            <p class="hero__sub" id="home-sub">آماده‌ای؟ روی دکمه بزن</p>
+            <button class="btn btn--primary btn--lg" id="btn-play">شروع بازی</button>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat card">
+            <span class="stat__label">امتیاز امروز</span>
+            <b class="stat__value" id="stat-today">۰</b>
+          </div>
+          <div class="stat card">
+            <span class="stat__label">رتبهٔ امروز</span>
+            <b class="stat__value" id="stat-rank">—</b>
+          </div>
+          <div class="stat card">
+            <span class="stat__label">امتیاز کل</span>
+            <b class="stat__value" id="stat-total">۰</b>
+          </div>
+        </div>
+
+        <div class="grid-buttons">
+          <button class="tile card" data-go="board">
+            <span class="tile__emoji">🏆</span>
+            <span class="tile__title">برترین‌ها</span>
+            <span class="tile__sub">جدول امروز و هفته</span>
+          </button>
+          <button class="tile card" data-go="daily">
+            <span class="tile__emoji">📅</span>
+            <span class="tile__title">مرحلهٔ امروز</span>
+            <span class="tile__sub">هر روز یک پازل تازه</span>
+          </button>
+          <button class="tile card" id="btn-invite">
+            <span class="tile__emoji">📣</span>
+            <span class="tile__title">دعوت دوستان</span>
+            <span class="tile__sub">با هم رقابت کنید</span>
+          </button>
+          <button class="tile card" data-go="rules">
+            <span class="tile__emoji">📖</span>
+            <span class="tile__title">راهنما</span>
+            <span class="tile__sub">قواعد بازی</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ===================== بازی ===================== -->
+      <section class="screen" id="screen-game">
+        <header class="topbar topbar--game">
+          <button class="icon-btn" id="btn-back" aria-label="بازگشت">→</button>
+          <div class="level-chip">
+            <span class="level-chip__label">مرحله</span>
+            <b id="game-level">۱</b>
+          </div>
+          <span class="pill" id="game-coins"><span class="pill__icon">🪙</span><b>0</b></span>
+        </header>
+
+        <div class="slots card" id="slots"></div>
+        <div class="bonus-line" id="bonus-line" hidden></div>
+
+        <div class="wheel-wrap">
+          <div class="word-tray" id="word-tray"></div>
+          <canvas id="wheel" width="320" height="320"></canvas>
+        </div>
+
+        <div class="controls">
+          <button class="ctrl" id="btn-shuffle" aria-label="بر زدن حروف">
+            <span class="ctrl__emoji">🔀</span>
+            <span class="ctrl__label">بر زدن</span>
+          </button>
+          <button class="ctrl ctrl--hint" id="btn-hint" aria-label="راهنما">
+            <span class="ctrl__emoji">💡</span>
+            <span class="ctrl__label" id="hint-label">راهنما</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ===================== جدول ===================== -->
+      <section class="screen" id="screen-board">
+        <header class="topbar topbar--game">
+          <button class="icon-btn" id="board-back" aria-label="بازگشت">→</button>
+          <h2 class="screen-title">برترین‌ها</h2>
+          <span class="spacer"></span>
+        </header>
+        <div class="tabs" id="board-tabs">
+          <button class="tab tab--active" data-period="today">امروز</button>
+          <button class="tab" data-period="week">این هفته</button>
+          <button class="tab" data-period="all">همه</button>
+        </div>
+        <div class="board card" id="board-list"></div>
+      </section>
+
+      <!-- ===================== راهنما ===================== -->
+      <section class="screen" id="screen-rules">
+        <header class="topbar topbar--game">
+          <button class="icon-btn" id="rules-back" aria-label="بازگشت">→</button>
+          <h2 class="screen-title">راهنمای بازی</h2>
+          <span class="spacer"></span>
+        </header>
+        <div class="card prose">
+          <p>با کشیدن انگشت روی حروف گردونه، کلمه بساز. هر کلمهٔ درست امتیاز و سکه می‌دهد.</p>
+          <ul>
+            <li>کلمهٔ ۳ حرفی ۱۰، ۴ حرفی ۲۰، ۵ حرفی ۳۵، ۶ حرفی ۵۵ و ۷ حرفی ۸۰ امتیاز دارد.</li>
+            <li>کلمه‌هایی که در جای خالی‌ها نیستند هم اگر معتبر باشند «کلمهٔ اضافه» هستند (+۳ امتیاز).</li>
+            <li>هر حرف فقط به تعداد دفعاتی که در گردونه است قابل استفاده است.</li>
+            <li>با ۴۰ سکه یا یکی از ۳ راهنمای رایگان، یک حرف از کلمه‌ها را ببینید.</li>
+            <li>با کامل‌کردن مرحله ۱۰۰ امتیاز و ۲۵ سکه جایزه بگیرید و مرحلهٔ بعد باز می‌شود.</li>
+          </ul>
+          <p class="muted">امتیازها در جدول امروز و این هفته ثبت می‌شوند. استریک روزانه هم داریم 🔥</p>
+        </div>
+      </section>
+    </div>
+
+    <!-- ===================== پیام ===================== -->
+    <div class="toast" id="toast"></div>
+
+    <!-- ===================== جشن پایان مرحله ===================== -->
+    <div class="sheet" id="win-sheet" aria-hidden="true">
+      <div class="sheet__card">
+        <div class="confetti" id="confetti"></div>
+        <div class="sheet__emoji">🎉</div>
+        <h2 class="sheet__title">مرحله کامل شد!</h2>
+        <p class="sheet__sub" id="win-sub">همهٔ کلمه‌ها را پیدا کردی</p>
+        <div class="win-stats">
+          <div><b id="win-points">+۰</b><span>امتیاز</span></div>
+          <div><b id="win-coins">+۰</b><span>سکه</span></div>
+        </div>
+        <button class="btn btn--primary btn--lg" id="btn-next">مرحلهٔ بعد</button>
+        <button class="btn btn--ghost" id="btn-win-board">دیدن جدول برترین‌ها</button>
+      </div>
+    </div>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

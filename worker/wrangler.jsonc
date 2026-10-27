@@ -5,7 +5,14 @@
   "compatibility_date": "2025-01-01",
   "observability": { "enabled": true },
 
-  // دیتابیس D1 — شناسه را از Storage → D1 در پنل کلادفلر بردارید و اینجا بگذارید
+  // مینی‌اپ استاتیک از پوشهٔ public سرو می‌شود؛ مسیرهای API/وبهوک به Worker می‌روند
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*", "/webhook", "/setup", "/health"]
+  },
+
+  // D1 — شناسه را از Storage → D1 در پنل کلادفلر بردارید
   // (نام Worker بالا باید دقیقاً با نام Worker در پنل یکی باشد، وگرنه بیلد fail می‌شود)
   "d1_databases": [
     {
@@ -15,12 +22,9 @@
     }
   ],
 
-  // تایمر نوبت‌ها: هر دقیقه میزهای منقضی را خودکار بازی می‌کند
-  "triggers": { "crons": ["* * * * *"] },
-
   "vars": {
-    "BOT_USERNAME": "hydrogameofficialbot",
-    "TURN_TIMEOUT": "45",
-    "LOBBY_TIMEOUT": "180"
+    // آدرس عمومی مینی‌اپ (همین Worker). اگر دامنهٔ اختصاصی وصل کردید اینجا را عوض کنید.
+    "APP_URL": "https://telegram-game-bot.khodehydro.workers.dev",
+    "BOT_USERNAME": "hydrogameofficialbot"
   }
 }

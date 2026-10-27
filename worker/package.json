@@ -1,21 +1,20 @@
 {
-  "name": "telegram-card-games-worker",
-  "version": "0.1.0",
-  "description": "",
+  "name": "kalame-bazi",
+  "version": "1.0.0",
+  "description": "کلمه‌بازی — مینی‌اپ پازل کلمات فارسی برای تلگرام (Cloudflare Workers + D1)",
+  "private": true,
+  "type": "module",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "db:init": "wrangler d1 execute telegram-card-games --remote --file=./schema.sql",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "check": "tsc --noEmit && vitest run",
-    "cf:check": "wrangler deploy --dry-run --outdir dist"
+    "cf:check": "wrangler deploy --dry-run --outdir dist",
+    "levels": "python3 scripts/build_levels.py --input data/dictionary.json --out src/data/levels.json --count 400 --max-targets 12 --min-weight 5000 --bonus-min-weight 4000"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "private": true,
-  "type": "module",
+  "keywords": ["telegram", "mini-app", "word-game", "cloudflare-workers", "d1"],
+  "license": "MIT",
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20261027.1",
     "@types/node": "^26.6.5",
