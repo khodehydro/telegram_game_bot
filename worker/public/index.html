@@ -1,30 +1,118 @@
 <!doctype html>
-<html lang="fa" dir="rtl">
+<html lang="fa" dir="rtl" data-theme="dark">
   <head>
     <meta charset="utf-8" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
-    <meta name="theme-color" content="#120a26" />
+    <meta name="theme-color" content="#0b0716" />
+    <meta name="color-scheme" content="dark light" />
     <title>کلمه‌بازی</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800&display=swap"
-      rel="stylesheet"
-    />
     <link rel="stylesheet" href="/styles.css" />
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
   </head>
   <body>
-    <div id="app" aria-live="polite">
-      <!-- ===================== صفحهٔ لودینگ ===================== -->
-      <section class="screen screen--active" id="screen-loading">
+    <!-- ===================== آیکون‌ها (SVG sprite) ===================== -->
+    <svg aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden">
+      <defs>
+        <symbol id="i-coin" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9" />
+          <path d="m12 7.6 1.25 2.6 2.85.35-2.1 1.95.55 2.85L12 13.9l-2.55 1.45.55-2.85-2.1-1.95 2.85-.35L12 7.6Z" />
+        </symbol>
+        <symbol id="i-flame" viewBox="0 0 24 24">
+          <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5Z" />
+        </symbol>
+        <symbol id="i-trophy" viewBox="0 0 24 24">
+          <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+          <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+          <path d="M4 22h16" />
+          <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+          <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+          <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+        </symbol>
+        <symbol id="i-calendar" viewBox="0 0 24 24">
+          <rect x="3" y="4" width="18" height="18" rx="4" />
+          <path d="M8 2v4M16 2v4M3 10h18" />
+          <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" />
+        </symbol>
+        <symbol id="i-megaphone" viewBox="0 0 24 24">
+          <path d="m3 11 18-5v12L3 14v-3Z" />
+          <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6" />
+        </symbol>
+        <symbol id="i-book" viewBox="0 0 24 24">
+          <path d="M12 7v14" />
+          <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3Z" />
+        </symbol>
+        <symbol id="i-shuffle" viewBox="0 0 24 24">
+          <path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.8-1.1 2-1.7 3.3-1.7H22" />
+          <path d="m18 2 4 4-4 4" />
+          <path d="M2 6h1.9c1.5 0 2.9.9 3.6 2.2" />
+          <path d="M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8" />
+          <path d="m18 14 4 4-4 4" />
+        </symbol>
+        <symbol id="i-bulb" viewBox="0 0 24 24">
+          <path d="M9 18h6M10 22h4" />
+          <path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.2 1 2V18h6v-1.3c0-.8.4-1.5 1-2A7 7 0 0 0 12 2Z" />
+        </symbol>
+        <symbol id="i-arrow-right" viewBox="0 0 24 24">
+          <path d="M5 12h14M13 6l6 6-6 6" />
+        </symbol>
+        <symbol id="i-arrow-left" viewBox="0 0 24 24">
+          <path d="M19 12H5M11 6l-6 6 6 6" />
+        </symbol>
+        <symbol id="i-play" viewBox="0 0 24 24">
+          <path d="M8 5.5v13l11-6.5-11-6.5Z" fill="currentColor" stroke="none" />
+        </symbol>
+        <symbol id="i-sparkles" viewBox="0 0 24 24">
+          <path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8L12 3Z" />
+          <path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15Z" />
+        </symbol>
+        <symbol id="i-check" viewBox="0 0 24 24">
+          <path d="M20 6 9 17l-5-5" />
+        </symbol>
+        <symbol id="i-alert" viewBox="0 0 24 24">
+          <path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3Z" />
+          <path d="M12 9v4M12 17h.01" />
+        </symbol>
+        <symbol id="i-star" viewBox="0 0 24 24">
+          <path d="m12 3 2.7 5.8 6.3.8-4.6 4.4 1.2 6.3L12 17.4 6.4 20.3l1.2-6.3L3 9.6l6.3-.8L12 3Z" />
+        </symbol>
+        <symbol id="i-crown" viewBox="0 0 24 24">
+          <path d="M3 7l4 4 5-6 5 6 4-4v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" />
+        </symbol>
+        <symbol id="i-close" viewBox="0 0 24 24">
+          <path d="M18 6 6 18M6 6l12 12" />
+        </symbol>
+        <symbol id="i-grid" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="7" height="7" rx="2" />
+          <rect x="14" y="3" width="7" height="7" rx="2" />
+          <rect x="3" y="14" width="7" height="7" rx="2" />
+          <rect x="14" y="14" width="7" height="7" rx="2" />
+        </symbol>
+        <symbol id="i-flag" viewBox="0 0 24 24">
+          <path d="M4 22V4" />
+          <path d="M4 4h13l-2.5 4L17 12H4" />
+        </symbol>
+      </defs>
+    </svg>
+
+    <!-- ===================== پس‌زمینه ===================== -->
+    <div class="bg" aria-hidden="true">
+      <span class="bg__blob bg__blob--1"></span>
+      <span class="bg__blob bg__blob--2"></span>
+      <span class="bg__blob bg__blob--3"></span>
+      <span class="bg__grid"></span>
+      <span class="bg__vignette"></span>
+    </div>
+
+    <main id="app" aria-live="polite">
+      <!-- ===================== لودینگ ===================== -->
+      <section class="screen screen--center screen--active" id="screen-loading">
         <div class="loader">
+          <div class="loader__orbit"><span></span><span></span><span></span></div>
           <div class="loader__logo">ک</div>
           <div class="loader__text">کلمه‌بازی</div>
-          <div class="loader__dots"><span></span><span></span><span></span></div>
         </div>
       </section>
 
@@ -36,16 +124,30 @@
             <span class="brand__name">کلمه‌بازی</span>
           </div>
           <div class="pills">
-            <span class="pill" id="home-coins"><span class="pill__icon">🪙</span><b>0</b></span>
-            <span class="pill pill--fire" id="home-streak"><span class="pill__icon">🔥</span><b>0</b></span>
+            <span class="pill" id="home-coins">
+              <svg class="ico ico--gold"><use href="#i-coin" /></svg>
+              <b>۰</b>
+            </span>
+            <span class="pill pill--fire" id="home-streak">
+              <svg class="ico ico--fire"><use href="#i-flame" /></svg>
+              <b>۰</b>
+            </span>
           </div>
         </header>
 
         <div class="hero card">
+          <span class="hero__glow" aria-hidden="true"></span>
           <div class="hero__ring">
-            <svg viewBox="0 0 120 120" class="ring">
+            <svg viewBox="0 0 120 120" class="ring" aria-hidden="true">
+              <defs>
+                <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#c4b5fd" />
+                  <stop offset="0.55" stop-color="#8b5cf6" />
+                  <stop offset="1" stop-color="#6d3ef0" />
+                </linearGradient>
+              </defs>
               <circle class="ring__bg" cx="60" cy="60" r="52" />
-              <circle class="ring__fg" cx="60" cy="60" r="52" id="home-ring" />
+              <circle class="ring__fg" cx="60" cy="60" r="52" id="home-ring" stroke="url(#ringGrad)" />
             </svg>
             <div class="hero__ring-label">
               <b id="home-level">۱</b>
@@ -53,23 +155,32 @@
             </div>
           </div>
           <div class="hero__body">
-            <p class="hero__eyebrow">ادامهٔ بازی</p>
+            <p class="hero__eyebrow">
+              <svg class="ico"><use href="#i-sparkles" /></svg>
+              ادامهٔ بازی
+            </p>
             <h1 class="hero__title" id="home-title">مرحلهٔ ۱</h1>
             <p class="hero__sub" id="home-sub">آماده‌ای؟ روی دکمه بزن</p>
-            <button class="btn btn--primary btn--lg" id="btn-play">شروع بازی</button>
+            <button class="btn btn--primary btn--lg" id="btn-play">
+              <svg class="ico"><use href="#i-play" /></svg>
+              <span>شروع بازی</span>
+            </button>
           </div>
         </div>
 
         <div class="stats">
           <div class="stat card">
+            <span class="stat__icon stat__icon--sky"><svg class="ico"><use href="#i-star" /></svg></span>
             <span class="stat__label">امتیاز امروز</span>
             <b class="stat__value" id="stat-today">۰</b>
           </div>
           <div class="stat card">
+            <span class="stat__icon stat__icon--gold"><svg class="ico"><use href="#i-trophy" /></svg></span>
             <span class="stat__label">رتبهٔ امروز</span>
             <b class="stat__value" id="stat-rank">—</b>
           </div>
           <div class="stat card">
+            <span class="stat__icon stat__icon--mint"><svg class="ico"><use href="#i-coin" /></svg></span>
             <span class="stat__label">امتیاز کل</span>
             <b class="stat__value" id="stat-total">۰</b>
           </div>
@@ -77,22 +188,22 @@
 
         <div class="grid-buttons">
           <button class="tile card" data-go="board">
-            <span class="tile__emoji">🏆</span>
+            <span class="tile__icon tile__icon--gold"><svg class="ico"><use href="#i-trophy" /></svg></span>
             <span class="tile__title">برترین‌ها</span>
             <span class="tile__sub">جدول امروز و هفته</span>
           </button>
           <button class="tile card" data-go="daily">
-            <span class="tile__emoji">📅</span>
+            <span class="tile__icon tile__icon--sky"><svg class="ico"><use href="#i-calendar" /></svg></span>
             <span class="tile__title">مرحلهٔ امروز</span>
             <span class="tile__sub">هر روز یک پازل تازه</span>
           </button>
           <button class="tile card" id="btn-invite">
-            <span class="tile__emoji">📣</span>
+            <span class="tile__icon tile__icon--rose"><svg class="ico"><use href="#i-megaphone" /></svg></span>
             <span class="tile__title">دعوت دوستان</span>
             <span class="tile__sub">با هم رقابت کنید</span>
           </button>
           <button class="tile card" data-go="rules">
-            <span class="tile__emoji">📖</span>
+            <span class="tile__icon tile__icon--mint"><svg class="ico"><use href="#i-book" /></svg></span>
             <span class="tile__title">راهنما</span>
             <span class="tile__sub">قواعد بازی</span>
           </button>
@@ -102,29 +213,44 @@
       <!-- ===================== بازی ===================== -->
       <section class="screen" id="screen-game">
         <header class="topbar topbar--game">
-          <button class="icon-btn" id="btn-back" aria-label="بازگشت">→</button>
+          <button class="icon-btn" id="btn-back" aria-label="بازگشت">
+            <svg class="ico"><use href="#i-arrow-right" /></svg>
+          </button>
           <div class="level-chip">
+            <svg class="ico"><use href="#i-flag" /></svg>
             <span class="level-chip__label">مرحله</span>
             <b id="game-level">۱</b>
           </div>
-          <span class="pill" id="game-coins"><span class="pill__icon">🪙</span><b>0</b></span>
+          <span class="pill" id="game-coins">
+            <svg class="ico ico--gold"><use href="#i-coin" /></svg>
+            <b>۰</b>
+          </span>
         </header>
 
-        <div class="slots card" id="slots"></div>
-        <div class="bonus-line" id="bonus-line" hidden></div>
+        <div class="panel card">
+          <div class="panel__head">
+            <span class="panel__title">
+              <svg class="ico"><use href="#i-grid" /></svg>
+              کلمه‌ها
+            </span>
+            <span class="panel__count" id="slot-count">۰ / ۰</span>
+          </div>
+          <div class="slots" id="slots"></div>
+          <div class="bonus-line" id="bonus-line" hidden></div>
+        </div>
 
         <div class="wheel-wrap">
           <div class="word-tray" id="word-tray"></div>
-          <canvas id="wheel" width="320" height="320"></canvas>
+          <canvas id="wheel" width="320" height="320" aria-label="گردونهٔ حروف"></canvas>
         </div>
 
         <div class="controls">
           <button class="ctrl" id="btn-shuffle" aria-label="بر زدن حروف">
-            <span class="ctrl__emoji">🔀</span>
+            <span class="ctrl__icon"><svg class="ico"><use href="#i-shuffle" /></svg></span>
             <span class="ctrl__label">بر زدن</span>
           </button>
           <button class="ctrl ctrl--hint" id="btn-hint" aria-label="راهنما">
-            <span class="ctrl__emoji">💡</span>
+            <span class="ctrl__icon"><svg class="ico"><use href="#i-bulb" /></svg></span>
             <span class="ctrl__label" id="hint-label">راهنما</span>
           </button>
         </div>
@@ -133,8 +259,13 @@
       <!-- ===================== جدول ===================== -->
       <section class="screen" id="screen-board">
         <header class="topbar topbar--game">
-          <button class="icon-btn" id="board-back" aria-label="بازگشت">→</button>
-          <h2 class="screen-title">برترین‌ها</h2>
+          <button class="icon-btn" id="board-back" aria-label="بازگشت">
+            <svg class="ico"><use href="#i-arrow-right" /></svg>
+          </button>
+          <h2 class="screen-title">
+            <svg class="ico"><use href="#i-trophy" /></svg>
+            برترین‌ها
+          </h2>
           <span class="spacer"></span>
         </header>
         <div class="tabs" id="board-tabs">
@@ -148,40 +279,80 @@
       <!-- ===================== راهنما ===================== -->
       <section class="screen" id="screen-rules">
         <header class="topbar topbar--game">
-          <button class="icon-btn" id="rules-back" aria-label="بازگشت">→</button>
-          <h2 class="screen-title">راهنمای بازی</h2>
+          <button class="icon-btn" id="rules-back" aria-label="بازگشت">
+            <svg class="ico"><use href="#i-arrow-right" /></svg>
+          </button>
+          <h2 class="screen-title">
+            <svg class="ico"><use href="#i-book" /></svg>
+            راهنمای بازی
+          </h2>
           <span class="spacer"></span>
         </header>
         <div class="card prose">
-          <p>با کشیدن انگشت روی حروف گردونه، کلمه بساز. هر کلمهٔ درست امتیاز و سکه می‌دهد.</p>
-          <ul>
-            <li>کلمهٔ ۳ حرفی ۱۰، ۴ حرفی ۲۰، ۵ حرفی ۳۵، ۶ حرفی ۵۵ و ۷ حرفی ۸۰ امتیاز دارد.</li>
-            <li>کلمه‌هایی که در جای خالی‌ها نیستند هم اگر معتبر باشند «کلمهٔ اضافه» هستند (+۳ امتیاز).</li>
-            <li>هر حرف فقط به تعداد دفعاتی که در گردونه است قابل استفاده است.</li>
-            <li>با ۴۰ سکه یا یکی از ۳ راهنمای رایگان، یک حرف از کلمه‌ها را ببینید.</li>
-            <li>با کامل‌کردن مرحله ۱۰۰ امتیاز و ۲۵ سکه جایزه بگیرید و مرحلهٔ بعد باز می‌شود.</li>
+          <p class="prose__lead">با کشیدن انگشت روی حروف گردونه، کلمه بساز. هر کلمهٔ درست امتیاز و سکه می‌دهد.</p>
+          <ul class="rules">
+            <li>
+              <span class="rules__icon"><svg class="ico"><use href="#i-star" /></svg></span>
+              کلمهٔ ۳ حرفی ۱۰، ۴ حرفی ۲۰، ۵ حرفی ۳۵، ۶ حرفی ۵۵ و ۷ حرفی ۸۰ امتیاز دارد.
+            </li>
+            <li>
+              <span class="rules__icon"><svg class="ico"><use href="#i-sparkles" /></svg></span>
+              کلمه‌هایی که در جای خالی‌ها نیستند هم اگر معتبر باشند «کلمهٔ اضافه» هستند (+۳ امتیاز).
+            </li>
+            <li>
+              <span class="rules__icon"><svg class="ico"><use href="#i-grid" /></svg></span>
+              هر حرف فقط به تعداد دفعاتی که در گردونه است قابل استفاده است.
+            </li>
+            <li>
+              <span class="rules__icon"><svg class="ico"><use href="#i-bulb" /></svg></span>
+              با ۴۰ سکه یا یکی از ۳ راهنمای رایگان، یک حرف از کلمه‌ها را ببینید.
+            </li>
+            <li>
+              <span class="rules__icon"><svg class="ico"><use href="#i-trophy" /></svg></span>
+              با کامل‌کردن مرحله ۱۰۰ امتیاز و ۲۵ سکه جایزه بگیرید و مرحلهٔ بعد باز می‌شود.
+            </li>
+            <li>
+              <span class="rules__icon"><svg class="ico"><use href="#i-flame" /></svg></span>
+              هر روز بازی کنید تا استریک‌تان بالا برود و در جدول امروز و هفته بدرخشید.
+            </li>
           </ul>
-          <p class="muted">امتیازها در جدول امروز و این هفته ثبت می‌شوند. استریک روزانه هم داریم 🔥</p>
         </div>
       </section>
-    </div>
+    </main>
 
     <!-- ===================== پیام ===================== -->
-    <div class="toast" id="toast"></div>
+    <div class="toast" id="toast" role="status"></div>
 
     <!-- ===================== جشن پایان مرحله ===================== -->
     <div class="sheet" id="win-sheet" aria-hidden="true">
+      <div class="sheet__backdrop"></div>
       <div class="sheet__card">
         <div class="confetti" id="confetti"></div>
-        <div class="sheet__emoji">🎉</div>
+        <div class="sheet__badge">
+          <svg class="ico"><use href="#i-sparkles" /></svg>
+        </div>
         <h2 class="sheet__title">مرحله کامل شد!</h2>
         <p class="sheet__sub" id="win-sub">همهٔ کلمه‌ها را پیدا کردی</p>
         <div class="win-stats">
-          <div><b id="win-points">+۰</b><span>امتیاز</span></div>
-          <div><b id="win-coins">+۰</b><span>سکه</span></div>
+          <div class="win-stat">
+            <svg class="ico ico--gold"><use href="#i-star" /></svg>
+            <b id="win-points">+۰</b>
+            <span>امتیاز</span>
+          </div>
+          <div class="win-stat">
+            <svg class="ico ico--gold"><use href="#i-coin" /></svg>
+            <b id="win-coins">+۰</b>
+            <span>سکه</span>
+          </div>
         </div>
-        <button class="btn btn--primary btn--lg" id="btn-next">مرحلهٔ بعد</button>
-        <button class="btn btn--ghost" id="btn-win-board">دیدن جدول برترین‌ها</button>
+        <button class="btn btn--primary btn--lg" id="btn-next">
+          <svg class="ico"><use href="#i-arrow-left" /></svg>
+          <span>مرحلهٔ بعد</span>
+        </button>
+        <button class="btn btn--ghost" id="btn-win-board">
+          <svg class="ico"><use href="#i-trophy" /></svg>
+          <span>دیدن جدول برترین‌ها</span>
+        </button>
       </div>
     </div>
 

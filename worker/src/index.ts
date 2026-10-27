@@ -53,7 +53,7 @@ async function handleSetup(url: URL, env: FullEnv): Promise<Response> {
     await api.setChatMenuButton({
       menu_button: {
         type: "web_app",
-        text: "🎮 بازی",
+        text: "بازی",
         web_app: { url: appUrl },
       },
     });
