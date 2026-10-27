@@ -11,4 +11,4 @@ exclude = [".venv", "data"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
-ignore = ["E501", "B008", "UP042"]
+ignore = ["E501", "B008", "UP042", "UP017"]

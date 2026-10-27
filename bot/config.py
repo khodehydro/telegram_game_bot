@@ -2,8 +2,27 @@
 
 from __future__ import annotations
 
+import os
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def platform_webhook_url() -> str:
+    """Auto-detect the public URL on common hosting platforms."""
+    render = os.getenv("RENDER_EXTERNAL_URL")
+    if render:
+        return render.rstrip("/") + "/webhook"
+    koyeb = os.getenv("KOYEB_PUBLIC_DOMAIN")
+    if koyeb:
+        return "https://" + koyeb.strip("/") + "/webhook"
+    railway = os.getenv("RAILWAY_PUBLIC_DOMAIN")
+    if railway:
+        return "https://" + railway.strip("/") + "/webhook"
+    fly = os.getenv("FLY_APP_NAME")
+    if fly:
+        return f"https://{fly}.fly.dev/webhook"
+    return ""
 
 
 class Settings(BaseSettings):
@@ -15,13 +34,19 @@ class Settings(BaseSettings):
     # behaviour
     turn_timeout: int = Field(default=45, alias="TURN_TIMEOUT")
     lobby_timeout: int = Field(default=180, alias="LOBBY_TIMEOUT")
-    min_players: int = Field(default=2, alias="MIN_PLAYERS")
-    max_players: int = Field(default=4, alias="MAX_PLAYERS")
+
+    # web server / webhook
     webhook_url: str = Field(default="", alias="WEBHOOK_URL")
     webhook_secret: str = Field(default="", alias="WEBHOOK_SECRET")
     host: str = Field(default="0.0.0.0", alias="HOST")
     port: int = Field(default=8080, alias="PORT")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
+
+    def model_post_init(self, __context: object) -> None:  # noqa: D401
+        if not self.webhook_url:
+            detected = platform_webhook_url()
+            if detected:
+                object.__setattr__(self, "webhook_url", detected)
 
 
 settings = Settings()  # type: ignore[call-arg]

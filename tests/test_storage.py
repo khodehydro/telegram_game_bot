@@ -63,3 +63,35 @@ async def test_active_sessions_listing(tmp_path):
     rows = await db.list_active_sessions()
     assert len(rows) == 1
     await db.close()
+
+
+def test_supabase_ssl_is_translated_to_connect_args():
+    from bot.db.storage import split_ssl_options
+
+    url, args = split_ssl_options(
+        "postgresql+asyncpg://bot.app:pw@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres?sslmode=require"
+    )
+    assert "sslmode" not in url
+    assert "ssl" in args and args["ssl"] is not None
+
+
+def test_supabase_defaults_to_tls_without_sslmode():
+    from bot.db.storage import split_ssl_options
+
+    _, args = split_ssl_options("postgresql+asyncpg://u:p@db.abcdefgh.supabase.co:5432/postgres")
+    assert "ssl" in args
+
+
+def test_plain_postgres_gets_no_forced_tls():
+    from bot.db.storage import split_ssl_options
+
+    url, args = split_ssl_options("postgresql+asyncpg://u:p@localhost:5432/postgres")
+    assert args == {}
+    assert "localhost" in url
+
+
+def test_sqlite_untouched():
+    from bot.db.storage import split_ssl_options
+
+    url, args = split_ssl_options("sqlite+aiosqlite:///data/x.db")
+    assert args == {} and "data/x.db" in url

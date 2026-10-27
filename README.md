@@ -1,7 +1,23 @@
 # 🎴 ربات بازی‌های کارتی ایرانی (تلگرام)
 
+**ربات:** [@hydrogameofficialbot](https://t.me/hydrogameofficialbot)
+
 ربات تلگرامی برای بازی **پاسور** و **حکم** — هم داخل گروه، هم در میز خصوصی با لینک دعوت.
 نوشته‌شده با **Python + aiogram 3**، پایگاه‌داده **PostgreSQL (Supabase)** یا SQLite، و موتور بازی کاملاً مستقل از تلگرام (قابل تست).
+
+---
+
+## 📍 وضعیت پروژه
+
+| بخش | وضعیت |
+|---|---|
+| موتور پاسور و حکم | ✅ کامل و تست‌شده |
+| رابط تلگرام (گروه + میز خصوصی + پیوی برگ‌ها) | ✅ کامل |
+| دیتابیس Supabase | ✅ جدول‌ها ساخته شده + کاربر اختصاصی `bot_app` |
+| تست‌ها | ✅ ۵۵ تست + `ruff` تمیز |
+| اجرا روی هاست | ⏳ نیازمند یک سرور با دسترسی به `api.telegram.org` |
+
+> ⚠️ **نکته امنیتی:** توکن ربات را در چت نفرستید. اگر جایی منتشر شد، در [@BotFather](https://t.me/BotFather) → `/revoke` توکن را عوض کنید.
 
 ---
 
@@ -63,7 +79,8 @@ python -m venv .venv
 source .venv/bin/activate        # ویندوز: .venv\Scripts\activate
 pip install -r requirements.txt
 
-cp .env.example .env             # و BOT_TOKEN را داخلش بگذارید
+# فایل .env از قبل با BOT_TOKEN و DATABASE_URL آماده است
+# (اگر نبود: cp .env.example .env و مقادیر را بگذارید)
 python -m bot.main
 ```
 
@@ -88,28 +105,56 @@ DATABASE_URL=postgresql://postgres.xxxxxxxx:YOUR-PASSWORD@aws-0-eu-central-1.poo
 
 ## 🌍 استقرار آنلاین
 
-### Docker
+### ۰) بررسی پیش‌پرواز
+
+قبل از هر کاری، روی ماشینی که اینترنت آزاد دارد:
 
 ```bash
-docker compose up -d --build
+cp .env.example .env      # BOT_TOKEN و DATABASE_URL را بگذارید
+python -m scripts.doctor
 ```
 
-### Railway / Fly.io / Koyeb / VPS
+اگر هم توکن و هم دیتابیس ✅ شدند، ربات آماده است:
 
-- `Dockerfile` و `Procfile` آماده‌اند.
-- متغیرهای محیطی: `BOT_TOKEN` و `DATABASE_URL` را در پنل سرویس بگذارید.
-- برای **webhook** (پیشنهادی برای سرورهای serverless):
-
-```env
-WEBHOOK_URL=https://mybot.up.railway.app/webhook
-WEBHOOK_SECRET=یک-رشته-تصادفی
-PORT=8080
+```bash
+python -m bot.main
 ```
 
-ربات خودش وبهوک را ست می‌کند و روی `0.0.0.0:PORT` گوش می‌دهد. مسیر `/health` برای healthcheck آماده است.
-اگر `WEBHOOK_URL` خالی باشد، حالت polling اجرا می‌شود (نیازی به دامنه ندارد).
+### ۱) Railway (سریع‌ترین)
 
-### اجرای دائمی روی VPS (systemd)
+1. [railway.app](https://railway.app) → **New Project → Deploy from GitHub repo** → همین ریپو.
+2. Railway خودش `Dockerfile` را می‌شناسد (`railway.json` هم موجود است).
+3. در تب **Variables** این‌ها را بگذارید:
+   ```
+   BOT_TOKEN=...
+   DATABASE_URL=postgresql://bot_app.<ref>:<password>@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
+   ```
+4. در تب **Settings → Networking** یک دامنه بگیرید؛ ربات خودش `RAILWAY_PUBLIC_DOMAIN` را می‌خواند و وبهوک را ست می‌کند.
+5. Deploy → لاگ باید بگوید `webhook server listening on 0.0.0.0:8080`.
+
+### ۲) Fly.io
+
+```bash
+fly launch --no-deploy --copy-config      # از fly.toml استفاده می‌کند
+fly secrets set BOT_TOKEN="..." DATABASE_URL="..."
+fly deploy
+fly logs
+```
+
+### ۳) VPS (پایدارترین)
+
+```bash
+ssh root@SERVER
+apt update && apt install -y python3.12 python3.12-venv git
+git clone https://github.com/khodehydro/telegram_game_bot.git /opt/telegram_game_bot
+cd /opt/telegram_game_bot
+python3.12 -m venv .venv && .venv/bin/pip install -r requirements.txt
+cp .env.example .env && nano .env       # BOT_TOKEN و DATABASE_URL
+.venv/bin/python -m scripts.doctor
+.venv/bin/python -m bot.main            # تست دستی
+```
+
+سپس سرویس systemd:
 
 ```ini
 [Unit]
@@ -125,6 +170,25 @@ EnvironmentFile=/opt/telegram_game_bot/.env
 [Install]
 WantedBy=multi-user.target
 ```
+
+```bash
+systemctl daemon-reload && systemctl enable --now cardbot
+journalctl -u cardbot -f
+```
+
+### ۴) Docker (هر جا)
+
+```bash
+docker compose up -d --build
+docker compose logs -f
+```
+
+### نکات مهم
+
+- در **polling** نیازی به دامنه نیست؛ در **webhook** دامنه‌ی https لازم است. ربات روی Render/Railway/Koyeb/Fly خودش آدرس را تشخیص می‌دهد.
+- اگر سرور داخل ایران است، باید به `api.telegram.org` دسترسی داشته باشد (فیلتر است) — وگرنه از VPS خارج استفاده کنید.
+- سرویس رایگان Render بعد از بی‌کاری می‌خوابد؛ برای ربات ۲۴ساعته پلن paid یا VPS/Koyeb بهتر است.
+- `/health` برای healthcheck آماده است.
 
 ---
 
@@ -180,7 +244,7 @@ bot/
 
 ```bash
 pip install -r requirements-dev.txt
-python -m pytest        # ۵۱ تست: موتورها، رندر، دیتابیس و یک بازی کامل end-to-end
+python -m pytest        # ۵۵ تست: موتورها، رندر، دیتابیس و یک بازی کامل end-to-end
 ruff check .
 ```
 
