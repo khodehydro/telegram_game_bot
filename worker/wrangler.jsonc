@@ -1,0 +1,26 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "telegram-game-bot",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-01-01",
+  "observability": { "enabled": true },
+
+  // دیتابیس D1 — شناسه را از Storage → D1 در پنل کلادفلر بردارید و اینجا بگذارید
+  // (نام Worker بالا باید دقیقاً با نام Worker در پنل یکی باشد، وگرنه بیلد fail می‌شود)
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "telegram-card-games",
+      "database_id": "b9d6376f-d8d0-4192-a724-4b337b38ebb8"
+    }
+  ],
+
+  // تایمر نوبت‌ها: هر دقیقه میزهای منقضی را خودکار بازی می‌کند
+  "triggers": { "crons": ["* * * * *"] },
+
+  "vars": {
+    "BOT_USERNAME": "hydrogameofficialbot",
+    "TURN_TIMEOUT": "45",
+    "LOBBY_TIMEOUT": "180"
+  }
+}

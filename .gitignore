@@ -1,0 +1,18 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+data/
+*.db
+*.sqlite3
+.pytest_cache/
+.ruff_cache/
+.DS_Store
+
+# Cloudflare Worker
+worker/node_modules/
+worker/.wrangler/
+worker/.dev.vars
+worker/dist/
+worker/dist/

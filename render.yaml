@@ -1,0 +1,17 @@
+# Blueprint برای Render — https://render.com/docs/blueprint-spec
+# توجه: سرویس رایگان Render بعد از بی‌کاری می‌خوابد؛ برای ربات ۲۴ساعته از
+# پلن paid یا VPS استفاده کنید.
+services:
+  - type: web
+    name: hydrogame-bot
+    runtime: docker
+    plan: free
+    region: frankfurt
+    healthCheckPath: /health
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: WEBHOOK_SECRET
+        generateValue: true
