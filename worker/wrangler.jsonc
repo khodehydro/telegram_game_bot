@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "telegram-card-games",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-01-01",
+  "observability": { "enabled": true },
+
+  // دیتابیس D1 — بعد از `npx wrangler d1 create telegram-card-games` شناسه را اینجا بگذارید
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "telegram-card-games",
+      "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+    }
+  ],
+
+  // تایمر نوبت‌ها: هر دقیقه میزهای منقضی را خودکار بازی می‌کند
+  "triggers": { "crons": ["* * * * *"] },
+
+  "vars": {
+    "TURN_TIMEOUT": "45",
+    "LOBBY_TIMEOUT": "180"
+  }
+}

@@ -11,11 +11,21 @@
 
 | بخش | وضعیت |
 |---|---|
-| موتور پاسور و حکم | ✅ کامل و تست‌شده |
-| رابط تلگرام (گروه + میز خصوصی + پیوی برگ‌ها) | ✅ کامل |
+| موتور پاسور و حکم | ✅ کامل و تست‌شده (دو پیاده‌سازی: Python و TypeScript) |
+| رابط تلگرام (گروه + میز خصوصی + پیوی برگ‌ها) | ✅ کامل در هر دو نسخه |
 | دیتابیس Supabase | ✅ جدول‌ها ساخته شده + کاربر اختصاصی `bot_app` |
-| تست‌ها | ✅ ۵۵ تست + `ruff` تمیز |
-| اجرا روی هاست | ⏳ نیازمند یک سرور با دسترسی به `api.telegram.org` |
+| نسخه‌ی **Cloudflare Workers** (بدون سرور) | ✅ آماده در پوشه‌ی `worker/` — فقط `wrangler deploy` |
+| تست‌ها | ✅ ۵۵ تست پایتون + ۴۱ تست TypeScript، `ruff` و `tsc` تمیز |
+| اجرا | ⏳ یک بار باید روی هاست خودتان دیپلوی شود (این سندباکس به `api.telegram.org` دسترسی ندارد) |
+
+دو مسیر استقرار دارید — هر کدام را خواستید:
+
+| | ☁️ Cloudflare Workers | 🖥 سرور / Railway / VPS |
+|---|---|---|
+| فایل‌های راهنما | [`worker/README.md`](worker/README.md) | همین فایل، بخش «استقرار آنلاین» |
+| دیتابیس | D1 (داخل Cloudflare) | Supabase / Postgres |
+| هزینه | پلن رایگان | پلن رایگان یا سرور |
+| حالت اجرا | webhook | polling یا webhook |
 
 > ⚠️ **نکته امنیتی:** توکن ربات را در چت نفرستید. اگر جایی منتشر شد، در [@BotFather](https://t.me/BotFather) → `/revoke` توکن را عوض کنید.
 
@@ -103,7 +113,28 @@ DATABASE_URL=postgresql://postgres.xxxxxxxx:YOUR-PASSWORD@aws-0-eu-central-1.poo
 
 ---
 
-## 🌍 استقرار آنلاین
+## ☁️ استقرار بدون سرور روی Cloudflare
+
+اگر نمی‌خواهید سرور نگه دارید، نسخه‌ی **Cloudflare Workers** در پوشه‌ی [`worker/`](worker/README.md) آماده است:
+همان پاسور و حکم، با دیتابیس **D1** و تایمر نوبت با **Cron Trigger** — روی پلن رایگان.
+
+```bash
+cd worker
+npm install
+npx wrangler login
+npx wrangler d1 create telegram-card-games   # database_id را در wrangler.jsonc بگذارید
+npx wrangler d1 execute telegram-card-games --remote --file=./schema.sql
+npx wrangler secret put BOT_TOKEN
+npx wrangler secret put WEBHOOK_SECRET
+npx wrangler secret put SETUP_TOKEN
+npx wrangler deploy
+curl "https://telegram-card-games.<your-subdomain>.workers.dev/setup?token=<SETUP_TOKEN>"
+```
+
+جزئیات کامل: [`worker/README.md`](worker/README.md)
+
+---
+## 🌍 استقرار روی سرور (پایتون)
 
 ### ۰) بررسی پیش‌پرواز
 
@@ -219,7 +250,19 @@ docker compose logs -f
 ## 🧱 ساختار پروژه
 
 ```
-bot/
+worker/                   # نسخه‌ی Cloudflare Workers (TypeScript)
+├── src/
+│   ├── index.ts          # fetch / webhook / cron
+│   ├── handlers.ts       # دستورها و دکمه‌ها
+│   ├── service.ts        # منطق میز و رندر
+│   ├── storage.ts        # D1
+│   ├── render.ts
+│   └── games/            # پورت پاسور و حکم
+├── schema.sql
+├── wrangler.jsonc
+└── tests/
+
+bot/                      # نسخه‌ی پایتون (aiogram 3)
 ├── cards.py              # کارت، خال، رندر فارسی
 ├── config.py             # تنظیمات از .env
 ├── main.py               # اجرای polling / webhook + تایمر نوبت‌ها
@@ -243,9 +286,16 @@ bot/
 ## 🧪 تست
 
 ```bash
+# نسخه‌ی پایتون
 pip install -r requirements-dev.txt
 python -m pytest        # ۵۵ تست: موتورها، رندر، دیتابیس و یک بازی کامل end-to-end
 ruff check .
+
+# نسخه‌ی Cloudflare
+cd worker
+npm install
+npm test                # ۴۱ تست: موتورها، رندر، سرویس، D1 و تایمرها
+npm run typecheck
 ```
 
 تست end-to-end با یک Bot API تقلبی اجرا می‌شود، چون سندباکس به `api.telegram.org` دسترسی ندارد؛ بنابراین کل مسیر (آپدیت تلگرام → هندلر → موتور → دیتابیس) بدون شبکه تست می‌شود.
