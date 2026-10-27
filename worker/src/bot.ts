@@ -20,10 +20,10 @@ function playKeyboard(appUrl?: string): InlineKeyboard | undefined {
   if (!appUrl) return undefined;
   return {
     inline_keyboard: [
-      [{ text: "🎮 بازی کن", web_app: { url: appUrl } }],
+      [{ text: "شروع بازی", web_app: { url: appUrl } }],
       [
-        { text: "🏆 جدول برترین‌ها", callback_data: "top" },
-        { text: "📣 دعوت دوستان", url: shareUrl(appUrl) },
+        { text: "جدول برترین‌ها", callback_data: "top" },
+        { text: "دعوت دوستان", url: shareUrl(appUrl) },
       ],
     ],
   };
@@ -34,34 +34,34 @@ function dailyKeyboard(appUrl?: string): InlineKeyboard | undefined {
   const sep = appUrl.includes("?") ? "&" : "?";
   return {
     inline_keyboard: [
-      [{ text: "📅 مرحلهٔ امروز را بازی کن", web_app: { url: `${appUrl}${sep}daily=1` } }],
-      [{ text: "🏆 جدول برترین‌ها", callback_data: "top" }],
+      [{ text: "مرحلهٔ امروز را بازی کن", web_app: { url: `${appUrl}${sep}daily=1` } }],
+      [{ text: "جدول برترین‌ها", callback_data: "top" }],
     ],
   };
 }
 
 function shareUrl(appUrl: string, botUsername?: string): string {
-  const text = "با «کلمه‌بازی» حافظه‌ت رو تست کن! 🎮";
+  const text = "با «کلمه‌بازی» حافظه‌ت رو تست کن!";
   const url = botUsername ? `https://t.me/${botUsername}` : appUrl;
   return `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
 }
 
 function welcomeText(name: string, coins: number): string {
-  return `سلام <b>${esc(name)}</b> 👋
+  return `سلام <b>${esc(name)}</b>
 
-🎯 <b>کلمه‌بازی</b> — با حروف گردونه، کلمه بساز و مرحله‌ها را باز کن.
+<b>کلمه‌بازی</b> — با حروف گردونه، کلمه بساز و مرحله‌ها را باز کن.
 
-• 🔤 با کشیدن انگشت روی حروف، کلمه بساز
-• 🎁 کلمه‌های اضافه امتیاز جایزه دارند
-• 🔥 هر روز بازی کن تا استریک‌ات بالا برود
-• 🏆 در جدول برترین‌ها بالا برو
+• با کشیدن انگشت روی حروف، کلمه بساز
+• کلمه‌های اضافه امتیاز جایزه دارند
+• هر روز بازی کن تا استریک‌ات بالا برود
+• در جدول برترین‌ها بالا برو
 
-💰 سکهٔ شما: <b>${coins}</b>
+سکهٔ شما: <b>${coins}</b>
 
-دکمهٔ «🎮 بازی کن» را بزن تا شروع کنیم!`;
+دکمهٔ «شروع بازی» را بزن.`;
 }
 
-export const RULES_TEXT = `📖 <b>راهنمای بازی</b>
+export const RULES_TEXT = `<b>راهنمای بازی</b>
 
 ۱) روی حروف گردونه انگشت را بکش و کلمه بساز؛ با برداشتن انگشت کلمه ثبت می‌شود.
 ۲) هر کلمهٔ درست، امتیاز و سکه می‌دهد (کلمهٔ بلندتر، امتیاز بیشتر).
@@ -70,14 +70,13 @@ export const RULES_TEXT = `📖 <b>راهنمای بازی</b>
 ۵) با پیدا کردن همهٔ کلمه‌های مرحله، جایزهٔ تکمیل (+۱۰۰ امتیاز و +۲۵ سکه) می‌گیری.
 ۶) امتیاز روزانه در جدول «امروز» و «این هفته» حساب می‌شود.
 
-موفق باشی! 🍀`;
+موفق باشی!`;
 
 function leaderboardText(rows: { first_name: string | null; username: string | null; points: number }[]): string {
-  if (!rows.length) return "امروز هنوز کسی امتیاز نگرفته — اولین نفر باش! 🥇";
-  const medals = ["🥇", "🥈", "🥉"];
-  const lines = [`🏆 <b>برترین‌های امروز</b> — ${tehranDay()}`, ""];
+  if (!rows.length) return "امروز هنوز کسی امتیاز نگرفته — اولین نفر باش!";
+  const lines = [`<b>برترین‌های امروز</b> — ${tehranDay()}`, ""];
   rows.forEach((row, i) => {
-    const medal = medals[i] ?? `${i + 1}.`;
+    const medal = `${i + 1}.`;
     const name = esc(row.first_name ?? row.username ?? "بازیکن");
     lines.push(`${medal} ${name} — <b>${row.points}</b> امتیاز`);
   });
@@ -122,7 +121,7 @@ export async function handleUpdate(update: TgUpdate, env: BotEnv, store: Store):
     const level = getLevel(dailyLevelNumber());
     await api.sendMessage(
       chatId,
-      `📅 <b>مرحلهٔ امروز</b>\n\nحروف: ${esc(level.letters.join(" • "))}\nبا دکمهٔ زیر بازی کن و امتیازت را در جدول امروز ثبت کن.`,
+      `<b>مرحلهٔ امروز</b>\n\nحروف: ${esc(level.letters.join(" • "))}\nبا دکمهٔ زیر بازی کن و امتیازت را در جدول امروز ثبت کن.`,
       dailyKeyboard(appUrl),
     );
     return;
@@ -139,13 +138,13 @@ export async function handleUpdate(update: TgUpdate, env: BotEnv, store: Store):
     await api.sendMessage(
       chatId,
       [
-        `📊 <b>آمار شما</b>`,
+        `<b>آمار شما</b>`,
         "",
         `مرحله: <b>${player.level}</b>`,
         `امتیاز کل: <b>${player.total_points}</b>`,
         `امتیاز امروز: <b>${today}</b>`,
-        `استریک: <b>${player.streak}</b> روز 🔥`,
-        `سکه: <b>${player.coins}</b> 💰`,
+        `استریک: <b>${player.streak}</b> روز`,
+        `سکه: <b>${player.coins}</b>`,
       ].join("\n"),
       playKeyboard(appUrl),
     );
@@ -154,7 +153,7 @@ export async function handleUpdate(update: TgUpdate, env: BotEnv, store: Store):
 
   if (!text.startsWith("/")) {
     // پیام متنی آزاد: دکمهٔ بازی را نشان بده
-    await api.sendMessage(chatId, "برای شروع، دکمهٔ «🎮 بازی کن» را بزن 👇", playKeyboard(appUrl));
+    await api.sendMessage(chatId, "برای شروع، دکمهٔ «شروع بازی» را بزن.", playKeyboard(appUrl));
   }
 }
 
@@ -166,7 +165,7 @@ async function handleCallback(
 ): Promise<void> {
   const chatId = query.message?.chat.id;
   try {
-    await api.answerCallbackQuery(query.id, query.data === "top" ? "جدول امروز 👇" : undefined);
+    await api.answerCallbackQuery(query.id, query.data === "top" ? "جدول امروز" : undefined);
     if (chatId && query.data === "top") {
       await sendLeaderboard(store, api, chatId, appUrl);
     }

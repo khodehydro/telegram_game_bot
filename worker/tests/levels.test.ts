@@ -61,6 +61,27 @@ describe("levels data", () => {
     }
   });
 
+  it("سختی مرحله‌ها از آسان به سخت زیاد می‌شود", () => {
+    const counts = LEVELS.map((level) => level.targets.length);
+    const avg = (list: number[]) => list.reduce((sum, n) => sum + n, 0) / list.length;
+
+    expect(counts[0]).toBeLessThanOrEqual(6);
+    expect(counts[LEVELS.length - 1]).toBeGreaterThanOrEqual(10);
+    expect(Math.max(...counts)).toBeLessThanOrEqual(12);
+    expect(avg(counts.slice(0, 100))).toBeLessThan(avg(counts.slice(-100)));
+
+    // مرحله‌های آغازین نباید با کلمه‌های بلند/دشوار شروع شوند
+    const earlyMaxWord = Math.max(
+      ...LEVELS.slice(0, 30).flatMap((level) => level.targets.map((w) => w.length)),
+    );
+    expect(earlyMaxWord).toBeLessThanOrEqual(5);
+  });
+
+  it("گردونهٔ هر مرحله یکتاست", () => {
+    const wheels = LEVELS.map((level) => [...level.letters].sort().join(""));
+    expect(new Set(wheels).size).toBe(LEVELS.length);
+  });
+
   it("getLevel شماره را در محدودهٔ مجاز نگه می‌دارد", () => {
     expect(getLevel(-5).id).toBe(1);
     expect(getLevel(9999).id).toBe(LEVEL_COUNT);

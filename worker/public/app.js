@@ -27,7 +27,9 @@ function haptic(type = "light") {
 let toastTimer = null;
 function toast(message, kind = "") {
   const el = $("#toast");
-  el.textContent = message;
+  const icon = kind === "err" ? "i-alert" : kind === "ok" ? "i-check" : "i-sparkles";
+  el.innerHTML = `<svg class="toast__icon" aria-hidden="true"><use href="#${icon}"></use></svg><span></span>`;
+  el.querySelector("span").textContent = message;
   el.className = `toast toast--show ${kind ? `toast--${kind}` : ""}`;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => {
@@ -140,6 +142,11 @@ function renderSlots(animateRows = false) {
     }
     wrap.appendChild(row);
   }
+  const count = $("#slot-count");
+  if (count) {
+    const filled = state.slots.filter((slot) => slot.word).length;
+    count.textContent = `${fa(filled)} / ${fa(state.slots.length)}`;
+  }
 }
 
 function buildSlots(level) {
@@ -183,7 +190,8 @@ function renderBonus() {
   line.hidden = words.length === 0;
   if (!words.length) return;
   const label = document.createElement("span");
-  label.textContent = "✨ کلمه‌های اضافه:";
+  label.innerHTML =
+    '<svg class="ico" aria-hidden="true"><use href="#i-sparkles"></use></svg>کلمه‌های اضافه:';
   line.appendChild(label);
   for (const word of words) {
     const chip = document.createElement("span");
@@ -302,76 +310,153 @@ class Wheel {
   draw() {
     const ctx = this.ctx;
     const { cx, cy, radius, tile } = this;
-    ctx.clearRect(0, 0, this.cssSize, this.cssSize);
+    const size = this.cssSize;
+    const light = document.documentElement.dataset.theme === "light";
+    const TAU = Math.PI * 2;
+    ctx.clearRect(0, 0, size, size);
 
-    // حلقهٔ محو پشت گردونه
-    ctx.save();
+    // صفحهٔ محو پشت گردونه
+    const disc = ctx.createRadialGradient(cx, cy, radius * 0.15, cx, cy, size * 0.5);
+    disc.addColorStop(0, light ? "rgba(124,58,237,0.10)" : "rgba(139,92,246,0.17)");
+    disc.addColorStop(0.65, light ? "rgba(124,58,237,0.05)" : "rgba(91,33,182,0.08)");
+    disc.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = disc;
     ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-    ctx.strokeStyle = "rgba(139,92,246,0.16)";
-    ctx.lineWidth = 2;
-    ctx.setLineDash([2, 9]);
-    ctx.stroke();
-    ctx.restore();
+    ctx.arc(cx, cy, size * 0.5 - 1, 0, TAU);
+    ctx.fill();
 
-    // خطوط انتخاب
+    // حلقهٔ بیرونی
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius + tile * 0.42, 0, TAU);
+    ctx.strokeStyle = light ? "rgba(124,58,237,0.18)" : "rgba(196,181,253,0.16)";
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    // تیک‌های محیط گردونه
+    const ticks = 60;
+    for (let i = 0; i < ticks; i++) {
+      const angle = (i / ticks) * TAU - Math.PI / 2;
+      const inner = radius + tile * 0.58;
+      const major = i % 5 === 0;
+      const outer = inner + (major ? 7 : 3.5);
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(angle) * inner, cy + Math.sin(angle) * inner);
+      ctx.lineTo(cx + Math.cos(angle) * outer, cy + Math.sin(angle) * outer);
+      ctx.strokeStyle = major
+        ? light
+          ? "rgba(124,58,237,0.32)"
+          : "rgba(196,181,253,0.36)"
+        : light
+          ? "rgba(124,58,237,0.12)"
+          : "rgba(196,181,253,0.13)";
+      ctx.lineWidth = major ? 1.6 : 1;
+      ctx.stroke();
+    }
+
+    // مسیر انتخاب
     if (this.selection.length) {
       const points = this.selection.map((idx) => this.positions[idx]);
+      const tail = this.dragging && this.pointer ? this.pointer : null;
+      const last = tail ?? points[points.length - 1];
+      const grad = ctx.createLinearGradient(points[0].x, points[0].y, last.x, last.y);
+      grad.addColorStop(0, "#c4b5fd");
+      grad.addColorStop(1, "#7c3aed");
+
       ctx.save();
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
-      ctx.strokeStyle = "rgba(139,92,246,0.35)";
-      ctx.lineWidth = 16;
       ctx.beginPath();
       ctx.moveTo(points[0].x, points[0].y);
-      for (const p of points.slice(1)) ctx.lineTo(p.x, p.y);
-      if (this.dragging && this.pointer) ctx.lineTo(this.pointer.x, this.pointer.y);
+      for (const point of points.slice(1)) ctx.lineTo(point.x, point.y);
+      if (tail) ctx.lineTo(tail.x, tail.y);
+      ctx.strokeStyle = light ? "rgba(124,58,237,0.16)" : "rgba(139,92,246,0.26)";
+      ctx.lineWidth = 18;
       ctx.stroke();
-      ctx.strokeStyle = "#a78bfa";
-      ctx.lineWidth = 6;
+      ctx.shadowColor = "rgba(139,92,246,0.75)";
+      ctx.shadowBlur = 14;
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 6.5;
       ctx.stroke();
       ctx.restore();
+
+      if (tail) {
+        ctx.save();
+        ctx.shadowColor = "rgba(196,181,253,0.9)";
+        ctx.shadowBlur = 16;
+        ctx.fillStyle = "#ede9fe";
+        ctx.beginPath();
+        ctx.arc(tail.x, tail.y, 6.5, 0, TAU);
+        ctx.fill();
+        ctx.restore();
+      }
     }
 
-    // حروف
+    // حروف گردونه
     this.order.forEach((letterIdx, slotIdx) => {
       const pos = this.positions[slotIdx] ?? this.targets[slotIdx];
       const letter = this.letters[letterIdx];
       const selected = this.selection.includes(slotIdx);
-      const r = tile / 2;
+      const r = (tile / 2) * (selected ? 1.1 : 1);
 
       ctx.save();
       ctx.translate(pos.x, pos.y);
 
+      // سایهٔ زیر حرف
+      ctx.beginPath();
+      ctx.arc(0, 3, r, 0, TAU);
+      ctx.fillStyle = light ? "rgba(76,48,140,0.10)" : "rgba(0,0,0,0.30)";
+      ctx.fill();
+
       if (selected) {
-        ctx.shadowColor = "rgba(139,92,246,0.85)";
-        ctx.shadowBlur = 18;
+        ctx.shadowColor = "rgba(139,92,246,0.95)";
+        ctx.shadowBlur = 22;
       } else {
-        ctx.shadowColor = "rgba(0,0,0,0.35)";
+        ctx.shadowColor = light ? "rgba(76,48,140,0.18)" : "rgba(0,0,0,0.35)";
         ctx.shadowBlur = 10;
-        ctx.shadowOffsetY = 3;
+        ctx.shadowOffsetY = 2;
       }
 
       const grad = ctx.createLinearGradient(-r, -r, r, r);
       if (selected) {
-        grad.addColorStop(0, "#a78bfa");
-        grad.addColorStop(1, "#6d3ef0");
+        grad.addColorStop(0, "#d8ccff");
+        grad.addColorStop(0.45, "#a78bfa");
+        grad.addColorStop(1, "#6d28d9");
+      } else if (light) {
+        grad.addColorStop(0, "#ffffff");
+        grad.addColorStop(1, "#eee8ff");
       } else {
-        grad.addColorStop(0, "rgba(255,255,255,0.16)");
-        grad.addColorStop(1, "rgba(255,255,255,0.06)");
+        grad.addColorStop(0, "rgba(196,181,253,0.20)");
+        grad.addColorStop(1, "rgba(139,92,246,0.08)");
       }
       ctx.beginPath();
-      ctx.arc(0, 0, r, 0, Math.PI * 2);
+      ctx.arc(0, 0, r, 0, TAU);
       ctx.fillStyle = grad;
       ctx.fill();
-
       ctx.shadowColor = "transparent";
-      ctx.lineWidth = 1.5;
-      ctx.strokeStyle = selected ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.14)";
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
+
+      ctx.lineWidth = selected ? 2 : 1.4;
+      ctx.strokeStyle = selected
+        ? "rgba(255,255,255,0.85)"
+        : light
+          ? "rgba(76,48,140,0.16)"
+          : "rgba(255,255,255,0.16)";
       ctx.stroke();
 
-      ctx.fillStyle = selected ? "#fff" : "#efe9ff";
-      ctx.font = `700 ${Math.round(tile * 0.44)}px Vazirmatn, Tahoma, sans-serif`;
+      // هایلایت بالای حرف
+      ctx.beginPath();
+      ctx.arc(0, -r * 0.12, r * 0.72, Math.PI * 1.12, Math.PI * 1.88);
+      ctx.strokeStyle = selected
+        ? "rgba(255,255,255,0.55)"
+        : light
+          ? "rgba(255,255,255,0.9)"
+          : "rgba(255,255,255,0.22)";
+      ctx.lineWidth = 1.4;
+      ctx.stroke();
+
+      ctx.fillStyle = selected ? "#fff" : light ? "#2b1a4d" : "#f3eeff";
+      ctx.font = `800 ${Math.round(tile * 0.44)}px Vazirmatn, Tahoma, sans-serif`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(letter, 0, 1);
@@ -499,6 +584,7 @@ async function openLevel(n) {
     $("#word-tray").innerHTML = "";
     showScreen("screen-game");
     requestAnimationFrame(() => wheel.resize());
+    if (data.level.complete) toast("این مرحله را کامل کرده‌ای — برو مرحلهٔ بعد", "ok");
   } catch (err) {
     toast(err.message, "err");
   } finally {
@@ -670,7 +756,6 @@ async function refreshHome() {
     const circumference = 2 * Math.PI * 52;
     ring.style.strokeDasharray = String(circumference);
     ring.style.strokeDashoffset = String(circumference * (1 - pct));
-    ring.style.stroke = "var(--brand)";
     $("#home-sub").textContent = total
       ? solved
         ? `${fa(solved)} از ${fa(total)} کلمه پیدا شده`
@@ -692,17 +777,20 @@ async function loadBoard(period = state.boardPeriod) {
   try {
     const data = await api(`/api/leaderboard?period=${period}`);
     if (!data.rows.length) {
-      list.innerHTML = `<div class="board-empty">هنوز کسی در این بازه بازی نکرده.<br>اولین نفر باش! 🥇</div>`;
+      list.innerHTML = `<div class="board-empty">هنوز کسی در این بازه بازی نکرده.<br>اولین نفر باش!</div>`;
       return;
     }
-    const medals = ["🥇", "🥈", "🥉"];
     list.innerHTML = "";
     for (const row of data.rows) {
       const el = document.createElement("div");
       el.className = `row${row.me ? " row--me" : ""}`;
-      const medal = medals[row.rank - 1] ?? fa(row.rank);
+      const top = row.rank <= 3 ? ` row__rank--${row.rank}` : "";
+      const rankInner =
+        row.rank === 1
+          ? '<svg class="ico" aria-hidden="true"><use href="#i-crown"></use></svg>'
+          : fa(row.rank);
       el.innerHTML = `
-        <span class="row__rank">${medal}</span>
+        <span class="row__rank${top}">${rankInner}</span>
         <span class="row__avatar">${escapeHtml(row.name.slice(0, 1))}</span>
         <span class="row__name">${escapeHtml(row.name)}${row.me ? " (شما)" : ""}</span>
         <span class="row__points">${fa(row.points)}<span>امتیاز</span></span>
@@ -726,14 +814,15 @@ function escapeHtml(text) {
 
 // ------------------------------------------------------------------ شروع
 function applyTelegramTheme() {
+  const light = tg
+    ? tg.colorScheme === "light"
+    : Boolean(window.matchMedia?.("(prefers-color-scheme: light)")?.matches);
+  document.documentElement.dataset.theme = light ? "light" : "dark";
   if (!tg) return;
-  const scheme = tg.colorScheme;
-  document.documentElement.dataset.theme = scheme === "light" ? "light" : "dark";
   try {
-    tg.setHeaderColor("#120a26");
-    tg.setBackgroundColor("#120a26");
+    tg.setHeaderColor(light ? "#f3efff" : "#0b0716");
+    tg.setBackgroundColor(light ? "#f3efff" : "#0b0716");
     tg.expand?.();
-    tg.enableClosingConfirmation?.();
   } catch {
     /* ignore */
   }
@@ -758,6 +847,7 @@ function bindEvents() {
     showScreen("screen-board");
     loadBoard("today");
   });
+  $("#win-sheet .sheet__backdrop").addEventListener("click", hideWin);
 
   $$("[data-go]").forEach((btn) => {
     btn.addEventListener("click", async () => {
@@ -777,7 +867,7 @@ function bindEvents() {
 
   $("#btn-invite").addEventListener("click", () => {
     const bot = state.botUsername || "hydrogameofficialbot";
-    const url = `https://t.me/share/url?url=${encodeURIComponent(`https://t.me/${bot}`)}&text=${encodeURIComponent("بیا «کلمه‌بازی» بازی کنیم! 🎮")}`;
+    const url = `https://t.me/share/url?url=${encodeURIComponent(`https://t.me/${bot}`)}&text=${encodeURIComponent("بیا «کلمه‌بازی» بازی کنیم!")}`;
     if (tg?.openTelegramLink) tg.openTelegramLink(url);
     else window.open(url, "_blank");
   });
@@ -797,10 +887,20 @@ async function boot() {
   applyTelegramTheme();
   tg?.ready?.();
   wheel = new Wheel($("#wheel"));
+  tg?.onEvent?.("themeChanged", () => {
+    applyTelegramTheme();
+    wheel?.draw();
+  });
   bindEvents();
 
   try {
-    await document.fonts?.ready;
+    // قبل از رسم گردونه مطمئن شو قلم در وزن‌های لازم آماده است (کانواس خودش صبر نمی‌کند)
+    await Promise.all([
+      document.fonts?.load?.("400 14px Vazirmatn"),
+      document.fonts?.load?.("700 14px Vazirmatn"),
+      document.fonts?.load?.("800 24px Vazirmatn"),
+      document.fonts?.ready,
+    ]);
   } catch {
     /* ignore */
   }
