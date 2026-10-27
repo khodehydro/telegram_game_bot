@@ -47,7 +47,7 @@ async def check_database() -> bool:
     print(f"  ({backend}) {dsn.split('@')[-1] if '@' in dsn else dsn}")
     db = Database(dsn)
     try:
-        await db.start()
+        await asyncio.wait_for(db.start(), timeout=30)
         user = await db.upsert_user(999_999_999, "doctor", "Doctor")
         session = await db.create_session(
             chat_id=0, chat_type="private", game="pasur", owner_id=user.id, players=[user.id]
