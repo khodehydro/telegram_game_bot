@@ -14,7 +14,10 @@
 
 ---
 
-## 🚀 راه‌اندازی در ۶ قدم
+> 📌 اگر می‌خواهید همه‌چیز را **از پنل Cloudflare** انجام دهید (اتصال GitHub + بیلد خودکار)،
+> راهنمای قدم‌به‌قدم: [`DEPLOY-CLOUDFLARE.md`](DEPLOY-CLOUDFLARE.md)
+
+## 🚀 راه‌اندازی با CLI در ۶ قدم
 
 ```bash
 cd worker
@@ -61,12 +64,12 @@ npx wrangler secret put SETUP_TOKEN      # رمز یک‌بارمصرف برای
 npx wrangler deploy
 ```
 
-خروجی یک آدرس می‌دهد مثل `https://telegram-card-games.<your-subdomain>.workers.dev`.
+خروجی یک آدرس می‌دهد مثل `https://telegram-game-bot.<your-subdomain>.workers.dev`.
 
 ### ۵) ثبت وبهوک (یک بار)
 
 ```bash
-curl "https://telegram-card-games.<your-subdomain>.workers.dev/setup?token=<SETUP_TOKEN>"
+curl "https://telegram-game-bot.<your-subdomain>.workers.dev/setup?token=<SETUP_TOKEN>"
 # → {"ok":true,"webhook":"https://.../webhook","bot":"hydrogameofficialbot"}
 ```
 

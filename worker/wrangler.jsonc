@@ -1,11 +1,12 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "telegram-card-games",
+  "name": "telegram-game-bot",
   "main": "src/index.ts",
   "compatibility_date": "2025-01-01",
   "observability": { "enabled": true },
 
-  // دیتابیس D1 — بعد از `npx wrangler d1 create telegram-card-games` شناسه را اینجا بگذارید
+  // دیتابیس D1 — شناسه را از Storage → D1 در پنل کلادفلر بردارید و اینجا بگذارید
+  // (نام Worker بالا باید دقیقاً با نام Worker در پنل یکی باشد، وگرنه بیلد fail می‌شود)
   "d1_databases": [
     {
       "binding": "DB",
@@ -18,6 +19,7 @@
   "triggers": { "crons": ["* * * * *"] },
 
   "vars": {
+    "BOT_USERNAME": "hydrogameofficialbot",
     "TURN_TIMEOUT": "45",
     "LOBBY_TIMEOUT": "180"
   }

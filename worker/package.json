@@ -2,17 +2,14 @@
   "name": "telegram-card-games-worker",
   "version": "0.1.0",
   "description": "",
-  "main": "index.js",
-  "directories": {
-    "test": "tests"
-  },
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "db:init": "wrangler d1 execute telegram-card-games --remote --file=./schema.sql",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check": "tsc --noEmit && vitest run"
+    "check": "tsc --noEmit && vitest run",
+    "cf:check": "wrangler deploy --dry-run --outdir dist"
   },
   "keywords": [],
   "author": "",
@@ -25,5 +22,8 @@
     "typescript": "^5.9.3",
     "vitest": "^5.0.5",
     "wrangler": "^4.153.0"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

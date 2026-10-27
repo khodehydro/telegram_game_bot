@@ -128,10 +128,10 @@ npx wrangler secret put BOT_TOKEN
 npx wrangler secret put WEBHOOK_SECRET
 npx wrangler secret put SETUP_TOKEN
 npx wrangler deploy
-curl "https://telegram-card-games.<your-subdomain>.workers.dev/setup?token=<SETUP_TOKEN>"
+curl "https://telegram-game-bot.<your-subdomain>.workers.dev/setup?token=<SETUP_TOKEN>"
 ```
 
-جزئیات کامل: [`worker/README.md`](worker/README.md)
+جزئیات کامل: [`worker/README.md`](worker/README.md) — و برای اتصال از پنل: [`worker/DEPLOY-CLOUDFLARE.md`](worker/DEPLOY-CLOUDFLARE.md)
 
 ---
 ## 🌍 استقرار روی سرور (پایتون)
