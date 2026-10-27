@@ -1,133 +1,131 @@
 /**
- * Cloudflare Worker entry point.
- *
- *   POST /webhook   ← Telegram (secret-token protected)
- *   GET  /health    ← healthcheck
- *   GET  /setup     ← one-shot webhook + command registration (SETUP_TOKEN)
- *   scheduled()     ← cron: turn/lobby timeouts
+ * نقطهٔ ورود Worker:
+ *   GET  /health          → سلامت سرویس
+ *   GET  /setup?token=…   → ثبت وبهوک + منوی ربات + دکمهٔ مینی‌اپ (یک‌بار)
+ *   POST /webhook         → آپدیت‌های تلگرام
+ *   *    /api/*           → REST مینی‌اپ
+ *   *                     → فایل‌های استاتیک مینی‌اپ (public/)
  */
 
-import { UpdateHandler } from "./handlers";
-import { GameService } from "./service";
-import { Storage } from "./storage";
-import { TelegramClient, TgUpdate } from "./telegram";
+import { Env, json, routeApi, fail, Ctx } from "./api";
+import { handleUpdate } from "./bot";
+import { Store } from "./db";
+import { BotApi, TgUpdate } from "./telegram";
 
-export interface Env {
-  BOT_TOKEN: string;
-  DB: D1Database;
-  WEBHOOK_SECRET?: string;
-  SETUP_TOKEN?: string;
-  BOT_USERNAME?: string;
-  TURN_TIMEOUT?: string;
-  LOBBY_TIMEOUT?: string;
+export interface FullEnv extends Env {
+  ASSETS?: Fetcher;
 }
 
-// Per-isolate caches: avoids an extra Bot API call and DDL round-trip per update.
-let cachedUsername: string | null = null;
 let schemaReady = false;
 
-const COMMANDS = [
-  { command: "new", description: "ساخت میز بازی (پاسور / حکم)" },
-  { command: "join", description: "نشستن سر میز" },
-  { command: "cancel", description: "لغو میز" },
-  { command: "rules", description: "قوانین بازی‌ها" },
-  { command: "stats", description: "آمار من" },
-  { command: "top", description: "برترین بازیکنان" },
-  { command: "help", description: "راهنما" },
-];
-
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json; charset=utf-8" },
-  });
-}
-
-async function build(env: Env) {
-  const tg = new TelegramClient(env.BOT_TOKEN);
-  const db = new Storage(env.DB);
+async function storeFor(env: FullEnv): Promise<Store> {
+  const store = new Store(env.DB);
   if (!schemaReady) {
-    await db.init();
-    schemaReady = true;
-  }
-  if (!cachedUsername) {
-    if (env.BOT_USERNAME) {
-      cachedUsername = env.BOT_USERNAME;
-    } else {
-      try {
-        cachedUsername = (await tg.getMe()).username ?? null;
-      } catch {
-        cachedUsername = null; // retry on the next request
-      }
+    try {
+      await store.init();
+      schemaReady = true;
+    } catch (err) {
+      console.error("schema init failed", err);
     }
   }
-  const service = new GameService(tg, db, {
-    lobbyTimeout: Number(env.LOBBY_TIMEOUT ?? 180),
-    turnTimeout: Number(env.TURN_TIMEOUT ?? 45),
-    botUsername: cachedUsername ?? undefined,
-  });
-  return { tg, db, service };
+  return store;
+}
+
+async function handleSetup(url: URL, env: FullEnv): Promise<Response> {
+  if (!env.SETUP_TOKEN || url.searchParams.get("token") !== env.SETUP_TOKEN) {
+    return fail("unauthorized", "توکن تنظیمات نامعتبر است.", 401);
+  }
+  if (!env.BOT_TOKEN) return fail("no_bot_token", "BOT_TOKEN تنظیم نشده است.", 500);
+
+  const origin = url.origin;
+  const api = new BotApi(env.BOT_TOKEN);
+  try {
+    const me = await api.getMe();
+    const appUrl = env.APP_URL || origin;
+    await api.setWebhook(`${origin}/webhook`, env.WEBHOOK_SECRET);
+    await api.setMyCommands([
+      { command: "start", description: "شروع بازی و منو" },
+      { command: "today", description: "مرحلهٔ امروز" },
+      { command: "top", description: "جدول برترین‌ها" },
+      { command: "stats", description: "آمار من" },
+      { command: "rules", description: "راهنمای بازی" },
+    ]);
+    await api.setChatMenuButton({
+      menu_button: {
+        type: "web_app",
+        text: "🎮 بازی",
+        web_app: { url: appUrl },
+      },
+    });
+    return json({
+      ok: true,
+      bot: me.username,
+      webhook: `${origin}/webhook`,
+      app: appUrl,
+    });
+  } catch (err) {
+    return fail(
+      "telegram_error",
+      `ارتباط با تلگرام ناموفق بود: ${(err as Error).message}`,
+      502,
+    );
+  }
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: FullEnv): Promise<Response> {
     const url = new URL(request.url);
 
     if (url.pathname === "/health") {
-      return json({ ok: true, service: "telegram-card-games", runtime: "cloudflare-worker" });
+      return json({ ok: true, service: "kalame-bazi", version: 1 });
     }
 
-    if (url.pathname === "/setup") {
-      if (!env.SETUP_TOKEN || url.searchParams.get("token") !== env.SETUP_TOKEN) {
-        return json({ ok: false, error: "unauthorized" }, 401);
-      }
-      const { tg } = await build(env);
-      const webhookUrl = `${url.origin}/webhook`;
-      await tg.setWebhook(webhookUrl, env.WEBHOOK_SECRET);
-      await tg.setMyCommands(COMMANDS);
-      const me = await tg.getMe();
-      return json({ ok: true, webhook: webhookUrl, bot: me.username });
-    }
+    if (url.pathname === "/setup") return handleSetup(url, env);
 
     if (url.pathname === "/webhook" && request.method === "POST") {
       if (env.WEBHOOK_SECRET) {
         const header = request.headers.get("x-telegram-bot-api-secret-token");
-        if (header !== env.WEBHOOK_SECRET) return json({ ok: false, error: "bad secret" }, 401);
+        if (header !== env.WEBHOOK_SECRET) return fail("bad_secret", "secret نامعتبر", 401);
       }
       let update: TgUpdate;
       try {
         update = (await request.json()) as TgUpdate;
       } catch {
-        return json({ ok: false, error: "invalid json" }, 400);
+        return fail("bad_json", "بدنهٔ نامعتبر", 400);
       }
       try {
-        const { tg, db, service } = await build(env);
-        const handler = new UpdateHandler(tg, db, service);
-        await handler.handle(update);
+        const store = await storeFor(env);
+        await handleUpdate(update, env, store);
       } catch (err) {
-        // Always ack: otherwise Telegram retries the update forever.
         console.error("update failed", err);
       }
       return json({ ok: true });
     }
 
-    return new Response(
-      "🎴 Telegram card games worker is running.\nhealth: /health\nwebhook: POST /webhook\n",
-      { status: 200, headers: { "content-type": "text/plain; charset=utf-8" } },
-    );
-  },
+    if (url.pathname.startsWith("/api/")) {
+      const ctx: Ctx = { env, store: await storeFor(env), request, url };
+      try {
+        return await routeApi(ctx);
+      } catch (err) {
+        console.error("api error", err);
+        return fail("server_error", "خطای سرور؛ دوباره تلاش کنید.", 500);
+      }
+    }
 
-  async scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
-    ctx.waitUntil(
-      (async () => {
-        try {
-          const { service } = await build(env);
-          const acted = await service.processTimeouts();
-          if (acted) console.log(`auto-played ${acted} timed-out turn(s)`);
-        } catch (err) {
-          console.error("scheduled sweep failed", err);
-        }
-      })(),
-    );
+    // بقیهٔ مسیرها: فایل‌های استاتیک مینی‌اپ
+    if (env.ASSETS) {
+      const asset = await env.ASSETS.fetch(request);
+      if (asset.status !== 404) return asset;
+      if (!url.pathname.includes(".")) {
+        const indexUrl = new URL("/index.html", url);
+        return env.ASSETS.fetch(new Request(indexUrl.toString(), request));
+      }
+      return asset;
+    }
+
+    return new Response("Kalame Bazi worker is running. UI assets are not configured.", {
+      status: 200,
+      headers: { "content-type": "text/plain; charset=utf-8" },
+    });
   },
 };

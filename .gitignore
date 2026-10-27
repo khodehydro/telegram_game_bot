@@ -3,7 +3,7 @@ __pycache__/
 .venv/
 venv/
 .env
-data/
+/data/
 *.db
 *.sqlite3
 .pytest_cache/
@@ -14,5 +14,4 @@ data/
 worker/node_modules/
 worker/.wrangler/
 worker/.dev.vars
-worker/dist/
 worker/dist/
