@@ -118,7 +118,11 @@ def lookup(wheel: collections.Counter, index: dict[int, list[str]]) -> list[str]
 
 
 def pick_targets(base: str, common: list[str], limit: int) -> list[str]:
-    """ترکیبی از واژه‌های کوتاه تا بلند انتخاب می‌کند تا مرحله متنوع باشد."""
+    """ترکیبی از واژه‌های کوتاه تا بلند انتخاب می‌کند تا مرحله متنوع باشد.
+
+    واژه‌هایی که در مرحله‌های قبلی کم‌تر استفاده شده‌اند اولویت دارند تا
+    دایرهٔ واژگان بازی در ۴۰۰ مرحله پخش شود و هر مرحله تکراری نشود.
+    """
     by_len: dict[int, list[str]] = collections.defaultdict(list)
     for word in common:
         by_len[len(word)].append(word)
@@ -133,6 +137,81 @@ def pick_targets(base: str, common: list[str], limit: int) -> list[str]:
         if len(targets) >= limit:
             break
     return targets[:limit]
+
+
+def level_score(targets: list[str], letters: list[str], weights: dict[str, int]) -> float:
+    """امتیاز سختی؛ هرچه کمتر، مرحله آسان‌تر.
+
+    تعداد کلمه‌ها و طولشان بیشترین اثر را دارند و واژه‌های پرکاربرد
+    مرحله را آسان‌تر می‌کنند.
+    """
+    n = len(targets)
+    lengths = [len(w) for w in targets]
+    avg_len = sum(lengths) / n
+    max_len = max(lengths)
+    avg_weight = sum(weights.get(w, 0) for w in targets) / n
+    return (
+        n * 2.0
+        + max_len * 2.2
+        + avg_len * 1.4
+        + len(letters) * 0.9
+        - avg_weight / 2500.0
+    )
+
+
+def keep_count_for_rank(rank: int, total: int) -> int:
+    """پله‌های تعداد کلمه: شروع ۵ کلمه‌ای، پایان ۱۲ کلمه‌ای."""
+    frac = rank / max(1, total - 1)
+    if frac < 0.08:
+        return 5
+    if frac < 0.25:
+        return 6
+    if frac < 0.60:
+        return 7 if rank % 2 == 0 else 8
+    return 9 + (rank % 4)
+
+
+def trim_targets(entry: dict, keep: int, max_bonus: int) -> dict:
+    """کوتاه‌ترین/پرتکرارترین کلمه‌ها را نگه می‌دارد و بقیه را «کلمهٔ اضافه» می‌کند."""
+    targets = entry["targets"]
+    keep = max(5, min(keep, len(targets)))
+    kept = targets[:keep]
+    dropped = [w for w in targets[keep:] if w not in kept]
+    bonus = [w for w in entry["bonus"] if w not in kept]
+    bonus = sorted(set(bonus + dropped), key=lambda w: (len(w), w))[:max_bonus]
+    return {"letters": entry["letters"], "targets": kept, "bonus": bonus}
+
+
+def order_by_difficulty(
+    entries: list[dict],
+    weights: dict[str, int],
+    display: dict[str, str],
+    *,
+    max_bonus: int = 30,
+) -> list[dict]:
+    """مرحله‌ها را از آسان به سخت می‌چیند و تعداد کلمه‌ها را پله‌ای می‌کند."""
+    easy_first = sorted(
+        entries, key=lambda e: level_score(e["targets"], e["letters"], weights)
+    )
+    tiered = []
+    for rank, entry in enumerate(easy_first):
+        keep = keep_count_for_rank(rank, len(easy_first))
+        tiered.append(trim_targets(entry, keep, max_bonus))
+
+    tiered.sort(
+        key=lambda e: (
+            level_score(e["targets"], e["letters"], weights),
+            len(e["targets"]),
+        )
+    )
+    return [
+        {
+            "letters": entry["letters"],
+            "targets": [display.get(w, w) for w in entry["targets"]],
+            "bonus": [display.get(w, w) for w in entry["bonus"]],
+        }
+        for entry in tiered
+    ]
 
 
 def build_levels(
@@ -158,6 +237,7 @@ def build_levels(
     candidates.sort(key=lambda w: -common_weight[w])
 
     seen: set[tuple[str, ...]] = set()
+    usage: collections.Counter[str] = collections.Counter()
     levels: list[dict] = []
 
     for base in candidates:
@@ -175,7 +255,10 @@ def build_levels(
         if len(common) < min_targets:
             continue
 
-        common.sort(key=lambda w: -common_weight[w])
+        common.sort(key=lambda w: (usage[w] // 2, -common_weight[w]))
+        fresh = [w for w in common if usage[w] < 4]
+        if len(fresh) >= min_targets:
+            common = fresh
         targets = pick_targets(base, common, max_targets)
         if len(targets) < min_targets:
             continue
@@ -198,17 +281,11 @@ def build_levels(
 
         targets.sort(key=lambda w: (len(w), -common_weight[w]))
         bonus.sort(key=lambda w: (len(w), w))
-        levels.append(
-            {
-                "id": 0,
-                "letters": letters,
-                "targets": [display.get(w, w) for w in targets],
-                "bonus": [display.get(w, w) for w in bonus],
-            }
-        )
+        levels.append({"letters": letters, "targets": targets, "bonus": bonus})
+        usage.update(targets)
         seen.add(key)
 
-    levels.sort(key=lambda lv: (len(lv["targets"]), len(lv["letters"])))
+    levels = order_by_difficulty(levels, words, display, max_bonus=max_bonus)
     for i, lv in enumerate(levels, 1):
         lv["id"] = i
     return levels

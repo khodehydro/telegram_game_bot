@@ -18,6 +18,16 @@ const LEVELS: Level[] = (levelsData as { levels: Level[] }).levels;
 
 export const LEVEL_COUNT = LEVELS.length;
 
+/**
+ * نسخهٔ محتوای مرحله‌ها. با تغییر ترتیب/کلمات مرحله‌ها این عدد را بالا ببرید؛
+ * Store.init() پیشرفت قدیمی را یک‌بار پاک می‌کند تا شماره‌ها با پازل‌ها هم‌خوان بمانند.
+ */
+export const LEVELS_VERSION = 2;
+
+/** بازهٔ مرحلهٔ روز (بازهٔ متوسط سختی) */
+export const DAILY_MIN = 101;
+export const DAILY_MAX = 280;
+
 /** امتیاز هر واژه بر اساس طولش */
 export const WORD_POINTS: Record<number, number> = {
   3: 10,
@@ -165,10 +175,11 @@ export function pickHint(
 }
 
 export function dailyLevelNumber(date = new Date()): number {
-  // شمارهٔ مرحلهٔ روز، پایدار برای هر تاریخ میلادی
+  // مرحلهٔ روز از بازهٔ متوسط انتخاب می‌شود تا نه خیلی آسان باشد نه غیرمنصفانه سخت
   const start = Date.UTC(2024, 0, 1);
   const days = Math.floor((date.getTime() - start) / 86_400_000);
-  return ((days * 7 + 13) % LEVEL_COUNT) + 1;
+  const span = DAILY_MAX - DAILY_MIN + 1;
+  return DAILY_MIN + ((((days * 7 + 13) % span) + span) % span);
 }
 
 export function tehranDay(date = new Date()): string {

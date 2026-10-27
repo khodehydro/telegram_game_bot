@@ -1,6 +1,6 @@
 /** لایهٔ داده روی Cloudflare D1 (SQLite). */
 
-import { tehranDay } from "./levels";
+import { LEVELS_VERSION, tehranDay } from "./levels";
 
 export interface PlayerRow {
   id: number;
@@ -59,6 +59,11 @@ create table if not exists plays (
   created_at text not null default (datetime('now'))
 );
 
+create table if not exists meta (
+  key text primary key,
+  value text not null
+);
+
 create index if not exists ix_plays_day_user on plays (day, user_id);
 create index if not exists ix_plays_user on plays (user_id, day);
 create index if not exists ix_players_points on players (total_points desc);
@@ -89,6 +94,28 @@ export class Store {
       .map((s) => s.trim())
       .filter((s) => s.length > 0);
     for (const sql of statements) await this.db.prepare(sql).run();
+    await this.syncLevelsVersion();
+  }
+
+  /**
+   * اگر محتوای مرحله‌ها عوض شده باشد، پیشرفت/شمارهٔ مرحلهٔ بازیکن‌ها با پازل‌های
+   * جدید هم‌خوان نیست؛ یک‌بار آن را تازه می‌کنیم (امتیاز و سکه دست‌نخورده می‌ماند).
+   */
+  private async syncLevelsVersion(): Promise<void> {
+    const row = await this.db
+      .prepare("select value from meta where key = 'levels_version'")
+      .first<{ value: string }>();
+    if (row?.value === String(LEVELS_VERSION)) return;
+
+    await this.db.prepare("delete from progress").run();
+    await this.db.prepare("update players set level = 1").run();
+    await this.db
+      .prepare(
+        `insert into meta (key, value) values ('levels_version', ?)
+         on conflict(key) do update set value = excluded.value`,
+      )
+      .bind(String(LEVELS_VERSION))
+      .run();
   }
 
   // ---------------------------------------------------------------- players
