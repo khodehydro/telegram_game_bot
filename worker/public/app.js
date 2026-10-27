@@ -82,6 +82,7 @@ const state = {
   slots: [],
   daily: null,
   boardPeriod: "today",
+  botUsername: "",
   busy: false,
 };
 
@@ -240,6 +241,8 @@ class Wheel {
     this.canvas.style.height = `${size}px`;
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     this.layout();
+    // پس از تغییر اندازه، حروف باید روی حلقهٔ جدید بنشینند (نه مختصات قبلی)
+    if (!this.anim) this.positions = this.targets.map((t) => ({ ...t }));
     this.draw();
   }
 
@@ -650,6 +653,7 @@ async function refreshHome() {
     const data = await api("/api/me");
     state.me = data.player;
     state.daily = data.daily;
+    state.botUsername = data.botUsername || "";
     setCoins(data.player.coins);
     $("#home-streak").querySelector("b").textContent = fa(data.player.streak);
     $("#stat-today").textContent = fa(data.today.points);
@@ -772,7 +776,8 @@ function bindEvents() {
   });
 
   $("#btn-invite").addEventListener("click", () => {
-    const url = `https://t.me/share/url?url=${encodeURIComponent("https://t.me/hydrogameofficialbot")}&text=${encodeURIComponent("بیا «کلمه‌بازی» بازی کنیم! 🎮")}`;
+    const bot = state.botUsername || "hydrogameofficialbot";
+    const url = `https://t.me/share/url?url=${encodeURIComponent(`https://t.me/${bot}`)}&text=${encodeURIComponent("بیا «کلمه‌بازی» بازی کنیم! 🎮")}`;
     if (tg?.openTelegramLink) tg.openTelegramLink(url);
     else window.open(url, "_blank");
   });
